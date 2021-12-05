@@ -1,20 +1,14 @@
 {
-  "name": "electron-quick-start",
+  "name": "MiBandHRElectron",
   "version": "1.0.0",
   "description": "A minimal Electron application",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "build": "electron-packager ./ --platform=win32 --arch=x64"
   },
-  "repository": "https://github.com/electron/electron-quick-start",
-  "keywords": [
-    "Electron",
-    "quick",
-    "start",
-    "tutorial",
-    "demo"
-  ],
-  "author": "GitHub",
+  "repository": "https://github.com/rassi0429/miband-hr-electron",
+  "author": "GitHub,rassi0429",
   "license": "CC0-1.0",
   "devDependencies": {
     "electron": "^16.0.4"
