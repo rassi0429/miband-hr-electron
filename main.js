@@ -3,7 +3,7 @@ const path = require('path')
 
 let mainWindow = null
 
-function createWindow () {
+async function createWindow () {
   // Create the browser window.
   mainWindow = new BrowserWindow({
     width: 500,
@@ -16,7 +16,12 @@ function createWindow () {
   })
 
   // and load the index.html of the app.
-  mainWindow.loadFile('./render/index.html')
+  await mainWindow.loadFile('./render/index.html')
+  const args = process.argv.slice(process.env.NODE_ENV === 'development' ? 2 : 1)
+  if(args[0]) {
+    console.log("token")
+    mainWindow.webContents.send("key",[args[0]])
+  }
 }
 
 app.whenReady().then(() => {
@@ -71,7 +76,7 @@ async function getDeviceToken(code) {
     'app_version': '5.9.2-play_100355',
     'source': 'com.huami.watch.hmwatchmanager',
     'country_code': 'US',
-    'device_id': "02:00:00:43:03:FE", // TODO
+    'device_id': `02:00:00:${generateRandom()}:${generateRandom()}:${generateRandom()}`,
     'third_name': 'mi-watch',
     'lang': 'en',
     'device_model': 'android_phone',
@@ -103,4 +108,8 @@ async function getDeviceToken(code) {
   })
   console.log("Token OK")
   return tokens
+}
+function generateRandom() {
+  const hex = (Math.random() * 0xFF | 0).toString(16)
+  return ("00" + hex).slice(-2)
 }
