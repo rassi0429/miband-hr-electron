@@ -1,4 +1,4 @@
-const {app, BrowserWindow,ipcMain} = require('electron')
+const {app, BrowserWindow,ipcMain,session} = require('electron')
 const path = require('path')
 
 let mainWindow = null
@@ -26,6 +26,13 @@ async function createWindow () {
 
 app.whenReady().then(() => {
   createWindow()
+
+
+  session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
+    details.requestHeaders["User-Agent"] = "Chrome";
+    callback({ cancel: false, requestHeaders: details.requestHeaders });
+  });
+
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
@@ -56,6 +63,7 @@ server.listen(8080)
 // Token 周り
 ipcMain.on('open-miband-auth',  (event, arg) => {
   const loginWindow = new BrowserWindow({width: 600, height: 1000})
+  session.defaultSession.clearCache(() => {})
   loginWindow.loadURL("https://account.xiaomi.com/oauth2/authorize?skip_confirm=false&client_id=2882303761517383915&pt=0&scope=1+6000+16001+20000&redirect_uri=https%3A%2F%2Fhm.xiaomi.com%2Fwatch.do&_locale=en_US&response_type=code")
   loginWindow.webContents.on("did-fail-load",async (evt,code,desc,url)=> {
     let w = url.replace("https://hm.xiaomi.com/watch.do?code=","")
