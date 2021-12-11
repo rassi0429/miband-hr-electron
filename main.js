@@ -46,9 +46,40 @@ const ws = require('ws')
 const express = require("express")
 const http = require("http")
 const exp = express()
+var bodyParser = require('body-parser')
+// exp.use(bodyParser.json())
+//exp.use(express.json())
+exp.use(bodyParser.urlencoded({ extended: true }))
 exp.use(express.static(__dirname + '/static/'))
 const server = http.createServer(exp)
 const wss = new ws.Server({server: server})
+
+const allowCrossDomain = function(req, res, next) {
+  res.header('Access-Control-Allow-Origin', '*')
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE')
+  res.header(
+      'Access-Control-Allow-Headers',
+      'Content-Type, Authorization, access_token'
+  )
+
+  // intercept OPTIONS method
+  if ('OPTIONS' === req.method) {
+    res.send(200)
+  } else {
+    next()
+  }
+}
+exp.use(allowCrossDomain)
+// For Galaxy Watch
+exp.post("/",(req,res) => {
+  console.log(req.body.rate)
+  res.send("OK")
+  mainWindow.webContents.send("log",req.body.rate)
+  wss.clients.forEach(function each(client) {
+    client.send(req.body.rate)
+  })
+})
+
 wss.on('connection', function connection(ws) {
   ws.on('message', function incoming(message) {
     wss.clients.forEach(function each(client) {

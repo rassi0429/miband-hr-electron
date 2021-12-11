@@ -95,6 +95,10 @@
     localStorage.setItem("MiBandKeys",keys)
   })
 
+  ipcRenderer.on('log', (evt,msg) => {
+    console.log(msg)
+  })
+
   window.onload = function () {
     const keys = localStorage.getItem("MiBandKeys")
     if(!keys) return
