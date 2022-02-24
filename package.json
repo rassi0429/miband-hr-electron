@@ -11,7 +11,7 @@
   "author": "GitHub,rassi0429",
   "license": "CC0-1.0",
   "devDependencies": {
-    "electron": "^16.0.4"
+    "electron": "^17.1.0"
   },
   "dependencies": {
     "axios": "^0.24.0",
