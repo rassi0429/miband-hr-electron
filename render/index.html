@@ -6,7 +6,7 @@
           content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
   />
   <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-  <title>MiBand 5 Heartrate</title>
+  <title>MiBand Heartrate</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -29,6 +29,9 @@
       >
       </select>
     </div>
+    <label class="form-group">
+      <input type="checkbox" id="miband5" />use Miband 6
+    </label>
     <div class="form-group">
       <button id="connect-button">Connect</button>
     </div>
@@ -41,18 +44,26 @@
 </div>
 
 <script src="aes.js"></script>
+<script src="ecdh.js"></script>
 <script src="bundle.js"></script>
 <script>
   const chart = new Chart("#chart");
   const hr = document.querySelector("#hr");
   const connectButton = document.querySelector("#connect-button");
   const keyInput = document.querySelector("#auth-key");
+  const miband5 = document.querySelector("#miband5");
   const initBox = document.querySelector(".init");
   const hrBox = document.querySelector(".hr");
   let authKey = localStorage.getItem("auth-key");
   if (authKey) {
     keyInput.value = authKey;
   }
+
+  miband5.checked = localStorage.getItem("miband5") == "true";
+
+  miband5.addEventListener("change", e => {
+    localStorage.setItem("miband5", miband5.checked);
+  })
 
   connectButton.addEventListener("click", async () => {
     authKey = keyInput.options[keyInput.selectedIndex].value;
@@ -67,7 +78,7 @@
       chart.update(e.detail);
     });
     try {
-      window.miband = new MiBand5(authKey);
+      window.miband = !miband5.checked ? new MiBand5(authKey) : new MiBand6(authKey);
       await window.miband.init();
     } catch (e) {
       alert(e.message);

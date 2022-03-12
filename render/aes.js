@@ -1,144 +1,144 @@
 function checkInt(value) {
-    return (parseInt(value) === value);
+  return (parseInt(value) === value);
 }
 
 function checkInts(arrayish) {
-    if (!checkInt(arrayish.length)) {
-        return false;
-    }
+  if (!checkInt(arrayish.length)) {
+    return false;
+  }
 
-    for (var i = 0; i < arrayish.length; i++) {
-        if (!checkInt(arrayish[i]) || arrayish[i] < 0 || arrayish[i] > 255) {
-            return false;
-        }
+  for (var i = 0; i < arrayish.length; i++) {
+    if (!checkInt(arrayish[i]) || arrayish[i] < 0 || arrayish[i] > 255) {
+      return false;
     }
+  }
 
-    return true;
+  return true;
 }
 
 function coerceArray(arg, copy) {
 
-    // ArrayBuffer view
-    if (arg.buffer && arg.name === 'Uint8Array') {
+  // ArrayBuffer view
+  if (arg.buffer && arg.name === 'Uint8Array') {
 
-        if (copy) {
-            if (arg.slice) {
-                arg = arg.slice();
-            } else {
-                arg = Array.prototype.slice.call(arg);
-            }
-        }
-
-        return arg;
+    if (copy) {
+      if (arg.slice) {
+        arg = arg.slice();
+      } else {
+        arg = Array.prototype.slice.call(arg);
+      }
     }
 
-    // It's an array; check it is a valid representation of a byte
-    if (Array.isArray(arg)) {
-        if (!checkInts(arg)) {
-            throw new Error('Array contains invalid value: ' + arg);
-        }
+    return arg;
+  }
 
-        return new Uint8Array(arg);
+  // It's an array; check it is a valid representation of a byte
+  if (Array.isArray(arg)) {
+    if (!checkInts(arg)) {
+      throw new Error('Array contains invalid value: ' + arg);
     }
 
-    // Something else, but behaves like an array (maybe a Buffer? Arguments?)
-    if (checkInt(arg.length) && checkInts(arg)) {
-        return new Uint8Array(arg);
-    }
+    return new Uint8Array(arg);
+  }
 
-    throw new Error('unsupported array-like object');
+  // Something else, but behaves like an array (maybe a Buffer? Arguments?)
+  if (checkInt(arg.length) && checkInts(arg)) {
+    return new Uint8Array(arg);
+  }
+
+  throw new Error('unsupported array-like object');
 }
 
 function createArray(length) {
-    return new Uint8Array(length);
+  return new Uint8Array(length);
 }
 
 function copyArray(sourceArray, targetArray, targetStart, sourceStart, sourceEnd) {
-    if (sourceStart != null || sourceEnd != null) {
-        if (sourceArray.slice) {
-            sourceArray = sourceArray.slice(sourceStart, sourceEnd);
-        } else {
-            sourceArray = Array.prototype.slice.call(sourceArray, sourceStart, sourceEnd);
-        }
+  if (sourceStart != null || sourceEnd != null) {
+    if (sourceArray.slice) {
+      sourceArray = sourceArray.slice(sourceStart, sourceEnd);
+    } else {
+      sourceArray = Array.prototype.slice.call(sourceArray, sourceStart, sourceEnd);
     }
-    targetArray.set(sourceArray, targetStart);
+  }
+  targetArray.set(sourceArray, targetStart);
 }
 
 
 var convertUtf8 = (function () {
-    function toBytes(text) {
-        var result = [], i = 0;
-        text = encodeURI(text);
-        while (i < text.length) {
-            var c = text.charCodeAt(i++);
+  function toBytes(text) {
+    var result = [], i = 0;
+    text = encodeURI(text);
+    while (i < text.length) {
+      var c = text.charCodeAt(i++);
 
-            // if it is a % sign, encode the following 2 bytes as a hex value
-            if (c === 37) {
-                result.push(parseInt(text.substr(i, 2), 16))
-                i += 2;
+      // if it is a % sign, encode the following 2 bytes as a hex value
+      if (c === 37) {
+        result.push(parseInt(text.substr(i, 2), 16))
+        i += 2;
 
-                // otherwise, just the actual byte
-            } else {
-                result.push(c)
-            }
-        }
-
-        return coerceArray(result);
+        // otherwise, just the actual byte
+      } else {
+        result.push(c)
+      }
     }
 
-    function fromBytes(bytes) {
-        var result = [], i = 0;
+    return coerceArray(result);
+  }
 
-        while (i < bytes.length) {
-            var c = bytes[i];
+  function fromBytes(bytes) {
+    var result = [], i = 0;
 
-            if (c < 128) {
-                result.push(String.fromCharCode(c));
-                i++;
-            } else if (c > 191 && c < 224) {
-                result.push(String.fromCharCode(((c & 0x1f) << 6) | (bytes[i + 1] & 0x3f)));
-                i += 2;
-            } else {
-                result.push(String.fromCharCode(((c & 0x0f) << 12) | ((bytes[i + 1] & 0x3f) << 6) | (bytes[i + 2] & 0x3f)));
-                i += 3;
-            }
-        }
+    while (i < bytes.length) {
+      var c = bytes[i];
 
-        return result.join('');
+      if (c < 128) {
+        result.push(String.fromCharCode(c));
+        i++;
+      } else if (c > 191 && c < 224) {
+        result.push(String.fromCharCode(((c & 0x1f) << 6) | (bytes[i + 1] & 0x3f)));
+        i += 2;
+      } else {
+        result.push(String.fromCharCode(((c & 0x0f) << 12) | ((bytes[i + 1] & 0x3f) << 6) | (bytes[i + 2] & 0x3f)));
+        i += 3;
+      }
     }
 
-    return {
-        toBytes: toBytes,
-        fromBytes: fromBytes,
-    }
+    return result.join('');
+  }
+
+  return {
+    toBytes: toBytes,
+    fromBytes: fromBytes,
+  }
 })();
 
 var convertHex = (function () {
-    function toBytes(text) {
-        var result = [];
-        for (var i = 0; i < text.length; i += 2) {
-            result.push(parseInt(text.substr(i, 2), 16));
-        }
-
-        return result;
+  function toBytes(text) {
+    var result = [];
+    for (var i = 0; i < text.length; i += 2) {
+      result.push(parseInt(text.substr(i, 2), 16));
     }
 
-    // http://ixti.net/development/javascript/2011/11/11/base64-encodedecode-of-utf8-in-browser-with-js.html
-    var Hex = '0123456789abcdef';
+    return result;
+  }
 
-    function fromBytes(bytes) {
-        var result = [];
-        for (var i = 0; i < bytes.length; i++) {
-            var v = bytes[i];
-            result.push(Hex[(v & 0xf0) >> 4] + Hex[v & 0x0f]);
-        }
-        return result.join('');
-    }
+  // http://ixti.net/development/javascript/2011/11/11/base64-encodedecode-of-utf8-in-browser-with-js.html
+  var Hex = '0123456789abcdef';
 
-    return {
-        toBytes: toBytes,
-        fromBytes: fromBytes,
+  function fromBytes(bytes) {
+    var result = [];
+    for (var i = 0; i < bytes.length; i++) {
+      var v = bytes[i];
+      result.push(Hex[(v & 0xf0) >> 4] + Hex[v & 0x0f]);
     }
+    return result.join('');
+  }
+
+  return {
+    toBytes: toBytes,
+    fromBytes: fromBytes,
+  }
 })();
 
 
@@ -171,197 +171,197 @@ var U3 = [0x00000000, 0x0d0b0e09, 0x1a161c12, 0x171d121b, 0x342c3824, 0x3927362d
 var U4 = [0x00000000, 0x090d0b0e, 0x121a161c, 0x1b171d12, 0x24342c38, 0x2d392736, 0x362e3a24, 0x3f23312a, 0x48685870, 0x4165537e, 0x5a724e6c, 0x537f4562, 0x6c5c7448, 0x65517f46, 0x7e466254, 0x774b695a, 0x90d0b0e0, 0x99ddbbee, 0x82caa6fc, 0x8bc7adf2, 0xb4e49cd8, 0xbde997d6, 0xa6fe8ac4, 0xaff381ca, 0xd8b8e890, 0xd1b5e39e, 0xcaa2fe8c, 0xc3aff582, 0xfc8cc4a8, 0xf581cfa6, 0xee96d2b4, 0xe79bd9ba, 0x3bbb7bdb, 0x32b670d5, 0x29a16dc7, 0x20ac66c9, 0x1f8f57e3, 0x16825ced, 0x0d9541ff, 0x04984af1, 0x73d323ab, 0x7ade28a5, 0x61c935b7, 0x68c43eb9, 0x57e70f93, 0x5eea049d, 0x45fd198f, 0x4cf01281, 0xab6bcb3b, 0xa266c035, 0xb971dd27, 0xb07cd629, 0x8f5fe703, 0x8652ec0d, 0x9d45f11f, 0x9448fa11, 0xe303934b, 0xea0e9845, 0xf1198557, 0xf8148e59, 0xc737bf73, 0xce3ab47d, 0xd52da96f, 0xdc20a261, 0x766df6ad, 0x7f60fda3, 0x6477e0b1, 0x6d7aebbf, 0x5259da95, 0x5b54d19b, 0x4043cc89, 0x494ec787, 0x3e05aedd, 0x3708a5d3, 0x2c1fb8c1, 0x2512b3cf, 0x1a3182e5, 0x133c89eb, 0x082b94f9, 0x01269ff7, 0xe6bd464d, 0xefb04d43, 0xf4a75051, 0xfdaa5b5f, 0xc2896a75, 0xcb84617b, 0xd0937c69, 0xd99e7767, 0xaed51e3d, 0xa7d81533, 0xbccf0821, 0xb5c2032f, 0x8ae13205, 0x83ec390b, 0x98fb2419, 0x91f62f17, 0x4dd68d76, 0x44db8678, 0x5fcc9b6a, 0x56c19064, 0x69e2a14e, 0x60efaa40, 0x7bf8b752, 0x72f5bc5c, 0x05bed506, 0x0cb3de08, 0x17a4c31a, 0x1ea9c814, 0x218af93e, 0x2887f230, 0x3390ef22, 0x3a9de42c, 0xdd063d96, 0xd40b3698, 0xcf1c2b8a, 0xc6112084, 0xf93211ae, 0xf03f1aa0, 0xeb2807b2, 0xe2250cbc, 0x956e65e6, 0x9c636ee8, 0x877473fa, 0x8e7978f4, 0xb15a49de, 0xb85742d0, 0xa3405fc2, 0xaa4d54cc, 0xecdaf741, 0xe5d7fc4f, 0xfec0e15d, 0xf7cdea53, 0xc8eedb79, 0xc1e3d077, 0xdaf4cd65, 0xd3f9c66b, 0xa4b2af31, 0xadbfa43f, 0xb6a8b92d, 0xbfa5b223, 0x80868309, 0x898b8807, 0x929c9515, 0x9b919e1b, 0x7c0a47a1, 0x75074caf, 0x6e1051bd, 0x671d5ab3, 0x583e6b99, 0x51336097, 0x4a247d85, 0x4329768b, 0x34621fd1, 0x3d6f14df, 0x267809cd, 0x2f7502c3, 0x105633e9, 0x195b38e7, 0x024c25f5, 0x0b412efb, 0xd7618c9a, 0xde6c8794, 0xc57b9a86, 0xcc769188, 0xf355a0a2, 0xfa58abac, 0xe14fb6be, 0xe842bdb0, 0x9f09d4ea, 0x9604dfe4, 0x8d13c2f6, 0x841ec9f8, 0xbb3df8d2, 0xb230f3dc, 0xa927eece, 0xa02ae5c0, 0x47b13c7a, 0x4ebc3774, 0x55ab2a66, 0x5ca62168, 0x63851042, 0x6a881b4c, 0x719f065e, 0x78920d50, 0x0fd9640a, 0x06d46f04, 0x1dc37216, 0x14ce7918, 0x2bed4832, 0x22e0433c, 0x39f75e2e, 0x30fa5520, 0x9ab701ec, 0x93ba0ae2, 0x88ad17f0, 0x81a01cfe, 0xbe832dd4, 0xb78e26da, 0xac993bc8, 0xa59430c6, 0xd2df599c, 0xdbd25292, 0xc0c54f80, 0xc9c8448e, 0xf6eb75a4, 0xffe67eaa, 0xe4f163b8, 0xedfc68b6, 0x0a67b10c, 0x036aba02, 0x187da710, 0x1170ac1e, 0x2e539d34, 0x275e963a, 0x3c498b28, 0x35448026, 0x420fe97c, 0x4b02e272, 0x5015ff60, 0x5918f46e, 0x663bc544, 0x6f36ce4a, 0x7421d358, 0x7d2cd856, 0xa10c7a37, 0xa8017139, 0xb3166c2b, 0xba1b6725, 0x8538560f, 0x8c355d01, 0x97224013, 0x9e2f4b1d, 0xe9642247, 0xe0692949, 0xfb7e345b, 0xf2733f55, 0xcd500e7f, 0xc45d0571, 0xdf4a1863, 0xd647136d, 0x31dccad7, 0x38d1c1d9, 0x23c6dccb, 0x2acbd7c5, 0x15e8e6ef, 0x1ce5ede1, 0x07f2f0f3, 0x0efffbfd, 0x79b492a7, 0x70b999a9, 0x6bae84bb, 0x62a38fb5, 0x5d80be9f, 0x548db591, 0x4f9aa883, 0x4697a38d];
 
 function convertToInt32(bytes) {
-    var result = [];
-    for (var i = 0; i < bytes.length; i += 4) {
-        result.push(
-            (bytes[i] << 24) |
-            (bytes[i + 1] << 16) |
-            (bytes[i + 2] << 8) |
-            bytes[i + 3]
-        );
-    }
-    return result;
+  var result = [];
+  for (var i = 0; i < bytes.length; i += 4) {
+    result.push(
+      (bytes[i] << 24) |
+      (bytes[i + 1] << 16) |
+      (bytes[i + 2] << 8) |
+      bytes[i + 3]
+    );
+  }
+  return result;
 }
 
 var AES = function (key) {
-    if (!(this instanceof AES)) {
-        throw Error('AES must be instanitated with `new`');
-    }
+  if (!(this instanceof AES)) {
+    throw Error('AES must be instanitated with `new`');
+  }
 
-    Object.defineProperty(this, 'key', {
-        value: coerceArray(key, true)
-    });
+  Object.defineProperty(this, 'key', {
+    value: coerceArray(key, true)
+  });
 
-    this._prepare();
+  this._prepare();
 }
 
 
 AES.prototype._prepare = function () {
 
-    var rounds = numberOfRounds[this.key.length];
-    if (rounds == null) {
-        throw new Error('invalid key size (must be 16, 24 or 32 bytes)');
+  var rounds = numberOfRounds[this.key.length];
+  if (rounds == null) {
+    throw new Error('invalid key size (must be 16, 24 or 32 bytes)');
+  }
+
+  // encryption round keys
+  this._Ke = [];
+
+  // decryption round keys
+  this._Kd = [];
+
+  for (var i = 0; i <= rounds; i++) {
+    this._Ke.push([0, 0, 0, 0]);
+    this._Kd.push([0, 0, 0, 0]);
+  }
+
+  var roundKeyCount = (rounds + 1) * 4;
+  var KC = this.key.length / 4;
+
+  // convert the key into ints
+  var tk = convertToInt32(this.key);
+
+  // copy values into round key arrays
+  var index;
+  for (var i = 0; i < KC; i++) {
+    index = i >> 2;
+    this._Ke[index][i % 4] = tk[i];
+    this._Kd[rounds - index][i % 4] = tk[i];
+  }
+
+  // key expansion (fips-197 section 5.2)
+  var rconpointer = 0;
+  var t = KC, tt;
+  while (t < roundKeyCount) {
+    tt = tk[KC - 1];
+    tk[0] ^= ((S[(tt >> 16) & 0xFF] << 24) ^
+      (S[(tt >> 8) & 0xFF] << 16) ^
+      (S[tt & 0xFF] << 8) ^
+      S[(tt >> 24) & 0xFF] ^
+      (rcon[rconpointer] << 24));
+    rconpointer += 1;
+
+    // key expansion (for non-256 bit)
+    if (KC != 8) {
+      for (var i = 1; i < KC; i++) {
+        tk[i] ^= tk[i - 1];
+      }
+
+      // key expansion for 256-bit keys is "slightly different" (fips-197)
+    } else {
+      for (var i = 1; i < (KC / 2); i++) {
+        tk[i] ^= tk[i - 1];
+      }
+      tt = tk[(KC / 2) - 1];
+
+      tk[KC / 2] ^= (S[tt & 0xFF] ^
+        (S[(tt >> 8) & 0xFF] << 8) ^
+        (S[(tt >> 16) & 0xFF] << 16) ^
+        (S[(tt >> 24) & 0xFF] << 24));
+
+      for (var i = (KC / 2) + 1; i < KC; i++) {
+        tk[i] ^= tk[i - 1];
+      }
     }
-
-    // encryption round keys
-    this._Ke = [];
-
-    // decryption round keys
-    this._Kd = [];
-
-    for (var i = 0; i <= rounds; i++) {
-        this._Ke.push([0, 0, 0, 0]);
-        this._Kd.push([0, 0, 0, 0]);
-    }
-
-    var roundKeyCount = (rounds + 1) * 4;
-    var KC = this.key.length / 4;
-
-    // convert the key into ints
-    var tk = convertToInt32(this.key);
 
     // copy values into round key arrays
-    var index;
-    for (var i = 0; i < KC; i++) {
-        index = i >> 2;
-        this._Ke[index][i % 4] = tk[i];
-        this._Kd[rounds - index][i % 4] = tk[i];
+    var i = 0, r, c;
+    while (i < KC && t < roundKeyCount) {
+      r = t >> 2;
+      c = t % 4;
+      this._Ke[r][c] = tk[i];
+      this._Kd[rounds - r][c] = tk[i++];
+      t++;
     }
+  }
 
-    // key expansion (fips-197 section 5.2)
-    var rconpointer = 0;
-    var t = KC, tt;
-    while (t < roundKeyCount) {
-        tt = tk[KC - 1];
-        tk[0] ^= ((S[(tt >> 16) & 0xFF] << 24) ^
-            (S[(tt >> 8) & 0xFF] << 16) ^
-            (S[tt & 0xFF] << 8) ^
-            S[(tt >> 24) & 0xFF] ^
-            (rcon[rconpointer] << 24));
-        rconpointer += 1;
-
-        // key expansion (for non-256 bit)
-        if (KC != 8) {
-            for (var i = 1; i < KC; i++) {
-                tk[i] ^= tk[i - 1];
-            }
-
-            // key expansion for 256-bit keys is "slightly different" (fips-197)
-        } else {
-            for (var i = 1; i < (KC / 2); i++) {
-                tk[i] ^= tk[i - 1];
-            }
-            tt = tk[(KC / 2) - 1];
-
-            tk[KC / 2] ^= (S[tt & 0xFF] ^
-                (S[(tt >> 8) & 0xFF] << 8) ^
-                (S[(tt >> 16) & 0xFF] << 16) ^
-                (S[(tt >> 24) & 0xFF] << 24));
-
-            for (var i = (KC / 2) + 1; i < KC; i++) {
-                tk[i] ^= tk[i - 1];
-            }
-        }
-
-        // copy values into round key arrays
-        var i = 0, r, c;
-        while (i < KC && t < roundKeyCount) {
-            r = t >> 2;
-            c = t % 4;
-            this._Ke[r][c] = tk[i];
-            this._Kd[rounds - r][c] = tk[i++];
-            t++;
-        }
+  // inverse-cipher-ify the decryption round key (fips-197 section 5.3)
+  for (var r = 1; r < rounds; r++) {
+    for (var c = 0; c < 4; c++) {
+      tt = this._Kd[r][c];
+      this._Kd[r][c] = (U1[(tt >> 24) & 0xFF] ^
+        U2[(tt >> 16) & 0xFF] ^
+        U3[(tt >> 8) & 0xFF] ^
+        U4[tt & 0xFF]);
     }
-
-    // inverse-cipher-ify the decryption round key (fips-197 section 5.3)
-    for (var r = 1; r < rounds; r++) {
-        for (var c = 0; c < 4; c++) {
-            tt = this._Kd[r][c];
-            this._Kd[r][c] = (U1[(tt >> 24) & 0xFF] ^
-                U2[(tt >> 16) & 0xFF] ^
-                U3[(tt >> 8) & 0xFF] ^
-                U4[tt & 0xFF]);
-        }
-    }
+  }
 }
 
 AES.prototype.encrypt = function (plaintext) {
-    if (plaintext.length != 16) {
-        throw new Error('invalid plaintext size (must be 16 bytes)');
-    }
+  if (plaintext.length != 16) {
+    throw new Error('invalid plaintext size (must be 16 bytes)');
+  }
 
-    var rounds = this._Ke.length - 1;
-    var a = [0, 0, 0, 0];
+  var rounds = this._Ke.length - 1;
+  var a = [0, 0, 0, 0];
 
-    // convert plaintext to (ints ^ key)
-    var t = convertToInt32(plaintext);
+  // convert plaintext to (ints ^ key)
+  var t = convertToInt32(plaintext);
+  for (var i = 0; i < 4; i++) {
+    t[i] ^= this._Ke[0][i];
+  }
+
+  // apply round transforms
+  for (var r = 1; r < rounds; r++) {
     for (var i = 0; i < 4; i++) {
-        t[i] ^= this._Ke[0][i];
+      a[i] = (T1[(t[i] >> 24) & 0xff] ^
+        T2[(t[(i + 1) % 4] >> 16) & 0xff] ^
+        T3[(t[(i + 2) % 4] >> 8) & 0xff] ^
+        T4[t[(i + 3) % 4] & 0xff] ^
+        this._Ke[r][i]);
     }
+    t = a.slice();
+  }
 
-    // apply round transforms
-    for (var r = 1; r < rounds; r++) {
-        for (var i = 0; i < 4; i++) {
-            a[i] = (T1[(t[i] >> 24) & 0xff] ^
-                T2[(t[(i + 1) % 4] >> 16) & 0xff] ^
-                T3[(t[(i + 2) % 4] >> 8) & 0xff] ^
-                T4[t[(i + 3) % 4] & 0xff] ^
-                this._Ke[r][i]);
-        }
-        t = a.slice();
-    }
+  // the last round is special
+  var result = createArray(16), tt;
+  for (var i = 0; i < 4; i++) {
+    tt = this._Ke[rounds][i];
+    result[4 * i] = (S[(t[i] >> 24) & 0xff] ^ (tt >> 24)) & 0xff;
+    result[4 * i + 1] = (S[(t[(i + 1) % 4] >> 16) & 0xff] ^ (tt >> 16)) & 0xff;
+    result[4 * i + 2] = (S[(t[(i + 2) % 4] >> 8) & 0xff] ^ (tt >> 8)) & 0xff;
+    result[4 * i + 3] = (S[t[(i + 3) % 4] & 0xff] ^ tt) & 0xff;
+  }
 
-    // the last round is special
-    var result = createArray(16), tt;
-    for (var i = 0; i < 4; i++) {
-        tt = this._Ke[rounds][i];
-        result[4 * i] = (S[(t[i] >> 24) & 0xff] ^ (tt >> 24)) & 0xff;
-        result[4 * i + 1] = (S[(t[(i + 1) % 4] >> 16) & 0xff] ^ (tt >> 16)) & 0xff;
-        result[4 * i + 2] = (S[(t[(i + 2) % 4] >> 8) & 0xff] ^ (tt >> 8)) & 0xff;
-        result[4 * i + 3] = (S[t[(i + 3) % 4] & 0xff] ^ tt) & 0xff;
-    }
-
-    return result;
+  return result;
 }
 
 AES.prototype.decrypt = function (ciphertext) {
-    if (ciphertext.length != 16) {
-        throw new Error('invalid ciphertext size (must be 16 bytes)');
-    }
+  if (ciphertext.length != 16) {
+    throw new Error('invalid ciphertext size (must be 16 bytes)');
+  }
 
-    var rounds = this._Kd.length - 1;
-    var a = [0, 0, 0, 0];
+  var rounds = this._Kd.length - 1;
+  var a = [0, 0, 0, 0];
 
-    // convert plaintext to (ints ^ key)
-    var t = convertToInt32(ciphertext);
+  // convert plaintext to (ints ^ key)
+  var t = convertToInt32(ciphertext);
+  for (var i = 0; i < 4; i++) {
+    t[i] ^= this._Kd[0][i];
+  }
+
+  // apply round transforms
+  for (var r = 1; r < rounds; r++) {
     for (var i = 0; i < 4; i++) {
-        t[i] ^= this._Kd[0][i];
+      a[i] = (T5[(t[i] >> 24) & 0xff] ^
+        T6[(t[(i + 3) % 4] >> 16) & 0xff] ^
+        T7[(t[(i + 2) % 4] >> 8) & 0xff] ^
+        T8[t[(i + 1) % 4] & 0xff] ^
+        this._Kd[r][i]);
     }
+    t = a.slice();
+  }
 
-    // apply round transforms
-    for (var r = 1; r < rounds; r++) {
-        for (var i = 0; i < 4; i++) {
-            a[i] = (T5[(t[i] >> 24) & 0xff] ^
-                T6[(t[(i + 3) % 4] >> 16) & 0xff] ^
-                T7[(t[(i + 2) % 4] >> 8) & 0xff] ^
-                T8[t[(i + 1) % 4] & 0xff] ^
-                this._Kd[r][i]);
-        }
-        t = a.slice();
-    }
+  // the last round is special
+  var result = createArray(16), tt;
+  for (var i = 0; i < 4; i++) {
+    tt = this._Kd[rounds][i];
+    result[4 * i] = (Si[(t[i] >> 24) & 0xff] ^ (tt >> 24)) & 0xff;
+    result[4 * i + 1] = (Si[(t[(i + 3) % 4] >> 16) & 0xff] ^ (tt >> 16)) & 0xff;
+    result[4 * i + 2] = (Si[(t[(i + 2) % 4] >> 8) & 0xff] ^ (tt >> 8)) & 0xff;
+    result[4 * i + 3] = (Si[t[(i + 1) % 4] & 0xff] ^ tt) & 0xff;
+  }
 
-    // the last round is special
-    var result = createArray(16), tt;
-    for (var i = 0; i < 4; i++) {
-        tt = this._Kd[rounds][i];
-        result[4 * i] = (Si[(t[i] >> 24) & 0xff] ^ (tt >> 24)) & 0xff;
-        result[4 * i + 1] = (Si[(t[(i + 3) % 4] >> 16) & 0xff] ^ (tt >> 16)) & 0xff;
-        result[4 * i + 2] = (Si[(t[(i + 2) % 4] >> 8) & 0xff] ^ (tt >> 8)) & 0xff;
-        result[4 * i + 3] = (Si[t[(i + 1) % 4] & 0xff] ^ tt) & 0xff;
-    }
-
-    return result;
+  return result;
 }
 
 
@@ -369,52 +369,52 @@ AES.prototype.decrypt = function (ciphertext) {
  *  Mode Of Operation - Electonic Codebook (ECB)
  */
 var ModeOfOperationECB = function (key) {
-    if (!(this instanceof ModeOfOperationECB)) {
-        throw Error('AES must be instanitated with `new`');
-    }
+  if (!(this instanceof ModeOfOperationECB)) {
+    throw Error('AES must be instanitated with `new`');
+  }
 
-    this.description = "Electronic Code Block";
-    this.name = "ecb";
+  this.description = "Electronic Code Block";
+  this.name = "ecb";
 
-    this._aes = new AES(key);
+  this._aes = new AES(key);
 }
 
 ModeOfOperationECB.prototype.encrypt = function (plaintext) {
-    plaintext = coerceArray(plaintext);
+  plaintext = coerceArray(plaintext);
 
-    if ((plaintext.length % 16) !== 0) {
-        throw new Error('invalid plaintext size (must be multiple of 16 bytes)');
-    }
+  if ((plaintext.length % 16) !== 0) {
+    throw new Error('invalid plaintext size (must be multiple of 16 bytes)');
+  }
 
-    var ciphertext = createArray(plaintext.length);
-    var block = createArray(16);
+  var ciphertext = createArray(plaintext.length);
+  var block = createArray(16);
 
-    for (var i = 0; i < plaintext.length; i += 16) {
-        copyArray(plaintext, block, 0, i, i + 16);
-        block = this._aes.encrypt(block);
-        copyArray(block, ciphertext, i);
-    }
+  for (var i = 0; i < plaintext.length; i += 16) {
+    copyArray(plaintext, block, 0, i, i + 16);
+    block = this._aes.encrypt(block);
+    copyArray(block, ciphertext, i);
+  }
 
-    return ciphertext;
+  return ciphertext;
 }
 
 ModeOfOperationECB.prototype.decrypt = function (ciphertext) {
-    ciphertext = coerceArray(ciphertext);
+  ciphertext = coerceArray(ciphertext);
 
-    if ((ciphertext.length % 16) !== 0) {
-        throw new Error('invalid ciphertext size (must be multiple of 16 bytes)');
-    }
+  if ((ciphertext.length % 16) !== 0) {
+    throw new Error('invalid ciphertext size (must be multiple of 16 bytes)');
+  }
 
-    var plaintext = createArray(ciphertext.length);
-    var block = createArray(16);
+  var plaintext = createArray(ciphertext.length);
+  var block = createArray(16);
 
-    for (var i = 0; i < ciphertext.length; i += 16) {
-        copyArray(ciphertext, block, 0, i, i + 16);
-        block = this._aes.decrypt(block);
-        copyArray(block, plaintext, i);
-    }
+  for (var i = 0; i < ciphertext.length; i += 16) {
+    copyArray(ciphertext, block, 0, i, i + 16);
+    block = this._aes.decrypt(block);
+    copyArray(block, plaintext, i);
+  }
 
-    return plaintext;
+  return plaintext;
 }
 
 
@@ -422,71 +422,71 @@ ModeOfOperationECB.prototype.decrypt = function (ciphertext) {
  *  Mode Of Operation - Cipher Block Chaining (CBC)
  */
 var ModeOfOperationCBC = function (key, iv) {
-    if (!(this instanceof ModeOfOperationCBC)) {
-        throw Error('AES must be instanitated with `new`');
-    }
+  if (!(this instanceof ModeOfOperationCBC)) {
+    throw Error('AES must be instanitated with `new`');
+  }
 
-    this.description = "Cipher Block Chaining";
-    this.name = "cbc";
+  this.description = "Cipher Block Chaining";
+  this.name = "cbc";
 
-    if (!iv) {
-        iv = createArray(16);
+  if (!iv) {
+    iv = createArray(16);
 
-    } else if (iv.length != 16) {
-        throw new Error('invalid initialation vector size (must be 16 bytes)');
-    }
+  } else if (iv.length != 16) {
+    throw new Error('invalid initialation vector size (must be 16 bytes)');
+  }
 
-    this._lastCipherblock = coerceArray(iv, true);
+  this._lastCipherblock = coerceArray(iv, true);
 
-    this._aes = new AES(key);
+  this._aes = new AES(key);
 }
 
 ModeOfOperationCBC.prototype.encrypt = function (plaintext) {
-    plaintext = coerceArray(plaintext);
+  plaintext = coerceArray(plaintext);
 
-    if ((plaintext.length % 16) !== 0) {
-        throw new Error('invalid plaintext size (must be multiple of 16 bytes)');
+  if ((plaintext.length % 16) !== 0) {
+    throw new Error('invalid plaintext size (must be multiple of 16 bytes)');
+  }
+
+  var ciphertext = createArray(plaintext.length);
+  var block = createArray(16);
+
+  for (var i = 0; i < plaintext.length; i += 16) {
+    copyArray(plaintext, block, 0, i, i + 16);
+
+    for (var j = 0; j < 16; j++) {
+      block[j] ^= this._lastCipherblock[j];
     }
 
-    var ciphertext = createArray(plaintext.length);
-    var block = createArray(16);
+    this._lastCipherblock = this._aes.encrypt(block);
+    copyArray(this._lastCipherblock, ciphertext, i);
+  }
 
-    for (var i = 0; i < plaintext.length; i += 16) {
-        copyArray(plaintext, block, 0, i, i + 16);
-
-        for (var j = 0; j < 16; j++) {
-            block[j] ^= this._lastCipherblock[j];
-        }
-
-        this._lastCipherblock = this._aes.encrypt(block);
-        copyArray(this._lastCipherblock, ciphertext, i);
-    }
-
-    return ciphertext;
+  return ciphertext;
 }
 
 ModeOfOperationCBC.prototype.decrypt = function (ciphertext) {
-    ciphertext = coerceArray(ciphertext);
+  ciphertext = coerceArray(ciphertext);
 
-    if ((ciphertext.length % 16) !== 0) {
-        throw new Error('invalid ciphertext size (must be multiple of 16 bytes)');
+  if ((ciphertext.length % 16) !== 0) {
+    throw new Error('invalid ciphertext size (must be multiple of 16 bytes)');
+  }
+
+  var plaintext = createArray(ciphertext.length);
+  var block = createArray(16);
+
+  for (var i = 0; i < ciphertext.length; i += 16) {
+    copyArray(ciphertext, block, 0, i, i + 16);
+    block = this._aes.decrypt(block);
+
+    for (var j = 0; j < 16; j++) {
+      plaintext[i + j] = block[j] ^ this._lastCipherblock[j];
     }
 
-    var plaintext = createArray(ciphertext.length);
-    var block = createArray(16);
+    copyArray(ciphertext, this._lastCipherblock, 0, i, i + 16);
+  }
 
-    for (var i = 0; i < ciphertext.length; i += 16) {
-        copyArray(ciphertext, block, 0, i, i + 16);
-        block = this._aes.decrypt(block);
-
-        for (var j = 0; j < 16; j++) {
-            plaintext[i + j] = block[j] ^ this._lastCipherblock[j];
-        }
-
-        copyArray(ciphertext, this._lastCipherblock, 0, i, i + 16);
-    }
-
-    return plaintext;
+  return plaintext;
 }
 
 
@@ -494,112 +494,112 @@ ModeOfOperationCBC.prototype.decrypt = function (ciphertext) {
  *  Mode Of Operation - Cipher Feedback (CFB)
  */
 var ModeOfOperationCFB = function (key, iv, segmentSize) {
-    if (!(this instanceof ModeOfOperationCFB)) {
-        throw Error('AES must be instanitated with `new`');
-    }
+  if (!(this instanceof ModeOfOperationCFB)) {
+    throw Error('AES must be instanitated with `new`');
+  }
 
-    this.description = "Cipher Feedback";
-    this.name = "cfb";
+  this.description = "Cipher Feedback";
+  this.name = "cfb";
 
-    if (!iv) {
-        iv = createArray(16);
+  if (!iv) {
+    iv = createArray(16);
 
-    } else if (iv.length != 16) {
-        throw new Error('invalid initialation vector size (must be 16 size)');
-    }
+  } else if (iv.length != 16) {
+    throw new Error('invalid initialation vector size (must be 16 size)');
+  }
 
-    if (!segmentSize) {
-        segmentSize = 1;
-    }
+  if (!segmentSize) {
+    segmentSize = 1;
+  }
 
-    this.segmentSize = segmentSize;
+  this.segmentSize = segmentSize;
 
-    this._shiftRegister = coerceArray(iv, true);
+  this._shiftRegister = coerceArray(iv, true);
 
-    this._aes = new AES(key);
+  this._aes = new AES(key);
 }
 
 ModeOfOperationCFB.prototype.encrypt = function (plaintext) {
-    if ((plaintext.length % this.segmentSize) != 0) {
-        throw new Error('invalid plaintext size (must be segmentSize bytes)');
+  if ((plaintext.length % this.segmentSize) != 0) {
+    throw new Error('invalid plaintext size (must be segmentSize bytes)');
+  }
+
+  var encrypted = coerceArray(plaintext, true);
+
+  var xorSegment;
+  for (var i = 0; i < encrypted.length; i += this.segmentSize) {
+    xorSegment = this._aes.encrypt(this._shiftRegister);
+    for (var j = 0; j < this.segmentSize; j++) {
+      encrypted[i + j] ^= xorSegment[j];
     }
 
-    var encrypted = coerceArray(plaintext, true);
+    // Shift the register
+    copyArray(this._shiftRegister, this._shiftRegister, 0, this.segmentSize);
+    copyArray(encrypted, this._shiftRegister, 16 - this.segmentSize, i, i + this.segmentSize);
+  }
 
-    var xorSegment;
-    for (var i = 0; i < encrypted.length; i += this.segmentSize) {
-        xorSegment = this._aes.encrypt(this._shiftRegister);
-        for (var j = 0; j < this.segmentSize; j++) {
-            encrypted[i + j] ^= xorSegment[j];
-        }
-
-        // Shift the register
-        copyArray(this._shiftRegister, this._shiftRegister, 0, this.segmentSize);
-        copyArray(encrypted, this._shiftRegister, 16 - this.segmentSize, i, i + this.segmentSize);
-    }
-
-    return encrypted;
+  return encrypted;
 }
 
 ModeOfOperationCFB.prototype.decrypt = function (ciphertext) {
-    if ((ciphertext.length % this.segmentSize) != 0) {
-        throw new Error('invalid ciphertext size (must be segmentSize bytes)');
+  if ((ciphertext.length % this.segmentSize) != 0) {
+    throw new Error('invalid ciphertext size (must be segmentSize bytes)');
+  }
+
+  var plaintext = coerceArray(ciphertext, true);
+
+  var xorSegment;
+  for (var i = 0; i < plaintext.length; i += this.segmentSize) {
+    xorSegment = this._aes.encrypt(this._shiftRegister);
+
+    for (var j = 0; j < this.segmentSize; j++) {
+      plaintext[i + j] ^= xorSegment[j];
     }
 
-    var plaintext = coerceArray(ciphertext, true);
+    // Shift the register
+    copyArray(this._shiftRegister, this._shiftRegister, 0, this.segmentSize);
+    copyArray(ciphertext, this._shiftRegister, 16 - this.segmentSize, i, i + this.segmentSize);
+  }
 
-    var xorSegment;
-    for (var i = 0; i < plaintext.length; i += this.segmentSize) {
-        xorSegment = this._aes.encrypt(this._shiftRegister);
-
-        for (var j = 0; j < this.segmentSize; j++) {
-            plaintext[i + j] ^= xorSegment[j];
-        }
-
-        // Shift the register
-        copyArray(this._shiftRegister, this._shiftRegister, 0, this.segmentSize);
-        copyArray(ciphertext, this._shiftRegister, 16 - this.segmentSize, i, i + this.segmentSize);
-    }
-
-    return plaintext;
+  return plaintext;
 }
 
 /**
  *  Mode Of Operation - Output Feedback (OFB)
  */
 var ModeOfOperationOFB = function (key, iv) {
-    if (!(this instanceof ModeOfOperationOFB)) {
-        throw Error('AES must be instanitated with `new`');
-    }
+  if (!(this instanceof ModeOfOperationOFB)) {
+    throw Error('AES must be instanitated with `new`');
+  }
 
-    this.description = "Output Feedback";
-    this.name = "ofb";
+  this.description = "Output Feedback";
+  this.name = "ofb";
 
-    if (!iv) {
-        iv = createArray(16);
+  if (!iv) {
+    iv = createArray(16);
 
-    } else if (iv.length != 16) {
-        throw new Error('invalid initialation vector size (must be 16 bytes)');
-    }
+  } else if (iv.length != 16) {
+    throw new Error('invalid initialation vector size (must be 16 bytes)');
+  }
 
-    this._lastPrecipher = coerceArray(iv, true);
-    this._lastPrecipherIndex = 16;
+  this._lastPrecipher = coerceArray(iv, true);
+  this._lastPrecipherIndex = 16;
 
-    this._aes = new AES(key);
+  this._aes = new AES(key);
 }
 
 ModeOfOperationOFB.prototype.encrypt = function (plaintext) {
-    var encrypted = coerceArray(plaintext, true);
+  var encrypted = coerceArray(plaintext, true);
 
-    for (var i = 0; i < encrypted.length; i++) {
-        if (this._lastPrecipherIndex === 16) {
-            this._lastPrecipher = this._aes.encrypt(this._lastPrecipher);
-            this._lastPrecipherIndex = 0;
-        }
-        encrypted[i] ^= this._lastPrecipher[this._lastPrecipherIndex++];
+  for (var i = 0; i < encrypted.length; i++) {
+    if (this._lastPrecipherIndex === 16) {
+      this._lastPrecipher = this._aes.encrypt(this._lastPrecipher);
+      this._lastPrecipherIndex = 0;
     }
+    encrypted[i] ^= this._lastPrecipher[this._lastPrecipherIndex++];
+  }
 
-    return encrypted;
+  return encrypted;
 }
 
 // Decryption is symetric
@@ -610,59 +610,59 @@ ModeOfOperationOFB.prototype.decrypt = ModeOfOperationOFB.prototype.encrypt;
  *  Counter object for CTR common mode of operation
  */
 var Counter = function (initialValue) {
-    if (!(this instanceof Counter)) {
-        throw Error('Counter must be instanitated with `new`');
-    }
+  if (!(this instanceof Counter)) {
+    throw Error('Counter must be instanitated with `new`');
+  }
 
-    // We allow 0, but anything false-ish uses the default 1
-    if (initialValue !== 0 && !initialValue) {
-        initialValue = 1;
-    }
+  // We allow 0, but anything false-ish uses the default 1
+  if (initialValue !== 0 && !initialValue) {
+    initialValue = 1;
+  }
 
-    if (typeof (initialValue) === 'number') {
-        this._counter = createArray(16);
-        this.setValue(initialValue);
+  if (typeof (initialValue) === 'number') {
+    this._counter = createArray(16);
+    this.setValue(initialValue);
 
-    } else {
-        this.setBytes(initialValue);
-    }
+  } else {
+    this.setBytes(initialValue);
+  }
 }
 
 Counter.prototype.setValue = function (value) {
-    if (typeof (value) !== 'number' || parseInt(value) != value) {
-        throw new Error('invalid counter value (must be an integer)');
-    }
+  if (typeof (value) !== 'number' || parseInt(value) != value) {
+    throw new Error('invalid counter value (must be an integer)');
+  }
 
-    // We cannot safely handle numbers beyond the safe range for integers
-    if (value > Number.MAX_SAFE_INTEGER) {
-        throw new Error('integer value out of safe range');
-    }
+  // We cannot safely handle numbers beyond the safe range for integers
+  if (value > Number.MAX_SAFE_INTEGER) {
+    throw new Error('integer value out of safe range');
+  }
 
-    for (var index = 15; index >= 0; --index) {
-        this._counter[index] = value % 256;
-        value = parseInt(value / 256);
-    }
+  for (var index = 15; index >= 0; --index) {
+    this._counter[index] = value % 256;
+    value = parseInt(value / 256);
+  }
 }
 
 Counter.prototype.setBytes = function (bytes) {
-    bytes = coerceArray(bytes, true);
+  bytes = coerceArray(bytes, true);
 
-    if (bytes.length != 16) {
-        throw new Error('invalid counter bytes size (must be 16 bytes)');
-    }
+  if (bytes.length != 16) {
+    throw new Error('invalid counter bytes size (must be 16 bytes)');
+  }
 
-    this._counter = bytes;
+  this._counter = bytes;
 };
 
 Counter.prototype.increment = function () {
-    for (var i = 15; i >= 0; i--) {
-        if (this._counter[i] === 255) {
-            this._counter[i] = 0;
-        } else {
-            this._counter[i]++;
-            break;
-        }
+  for (var i = 15; i >= 0; i--) {
+    if (this._counter[i] === 255) {
+      this._counter[i] = 0;
+    } else {
+      this._counter[i]++;
+      break;
     }
+  }
 }
 
 
@@ -670,38 +670,38 @@ Counter.prototype.increment = function () {
  *  Mode Of Operation - Counter (CTR)
  */
 var ModeOfOperationCTR = function (key, counter) {
-    if (!(this instanceof ModeOfOperationCTR)) {
-        throw Error('AES must be instanitated with `new`');
-    }
+  if (!(this instanceof ModeOfOperationCTR)) {
+    throw Error('AES must be instanitated with `new`');
+  }
 
-    this.description = "Counter";
-    this.name = "ctr";
+  this.description = "Counter";
+  this.name = "ctr";
 
-    if (!(counter instanceof Counter)) {
-        counter = new Counter(counter)
-    }
+  if (!(counter instanceof Counter)) {
+    counter = new Counter(counter)
+  }
 
-    this._counter = counter;
+  this._counter = counter;
 
-    this._remainingCounter = null;
-    this._remainingCounterIndex = 16;
+  this._remainingCounter = null;
+  this._remainingCounterIndex = 16;
 
-    this._aes = new AES(key);
+  this._aes = new AES(key);
 }
 
 ModeOfOperationCTR.prototype.encrypt = function (plaintext) {
-    var encrypted = coerceArray(plaintext, true);
+  var encrypted = coerceArray(plaintext, true);
 
-    for (var i = 0; i < encrypted.length; i++) {
-        if (this._remainingCounterIndex === 16) {
-            this._remainingCounter = this._aes.encrypt(this._counter._counter);
-            this._remainingCounterIndex = 0;
-            this._counter.increment();
-        }
-        encrypted[i] ^= this._remainingCounter[this._remainingCounterIndex++];
+  for (var i = 0; i < encrypted.length; i++) {
+    if (this._remainingCounterIndex === 16) {
+      this._remainingCounter = this._aes.encrypt(this._counter._counter);
+      this._remainingCounterIndex = 0;
+      this._counter.increment();
     }
+    encrypted[i] ^= this._remainingCounter[this._remainingCounterIndex++];
+  }
 
-    return encrypted;
+  return encrypted;
 }
 
 // Decryption is symetric
@@ -713,37 +713,37 @@ ModeOfOperationCTR.prototype.decrypt = ModeOfOperationCTR.prototype.encrypt;
 
 // See:https://tools.ietf.org/html/rfc2315
 function pkcs7pad(data) {
-    data = coerceArray(data, true);
-    var padder = 16 - (data.length % 16);
-    var result = createArray(data.length + padder);
-    copyArray(data, result);
-    for (var i = data.length; i < result.length; i++) {
-        result[i] = padder;
-    }
-    return result;
+  data = coerceArray(data, true);
+  var padder = 16 - (data.length % 16);
+  var result = createArray(data.length + padder);
+  copyArray(data, result);
+  for (var i = data.length; i < result.length; i++) {
+    result[i] = padder;
+  }
+  return result;
 }
 
 function pkcs7strip(data) {
-    data = coerceArray(data, true);
-    if (data.length < 16) {
-        throw new Error('PKCS#7 invalid length');
-    }
+  data = coerceArray(data, true);
+  if (data.length < 16) {
+    throw new Error('PKCS#7 invalid length');
+  }
 
-    var padder = data[data.length - 1];
-    if (padder > 16) {
-        throw new Error('PKCS#7 padding byte out of range');
-    }
+  var padder = data[data.length - 1];
+  if (padder > 16) {
+    throw new Error('PKCS#7 padding byte out of range');
+  }
 
-    var length = data.length - padder;
-    for (var i = 0; i < padder; i++) {
-        if (data[length + i] !== padder) {
-            throw new Error('PKCS#7 invalid padding byte');
-        }
+  var length = data.length - padder;
+  for (var i = 0; i < padder; i++) {
+    if (data[length + i] !== padder) {
+      throw new Error('PKCS#7 invalid padding byte');
     }
+  }
 
-    var result = createArray(length);
-    copyArray(data, result, 0, 0, length);
-    return result;
+  var result = createArray(length);
+  copyArray(data, result, 0, 0, length);
+  return result;
 }
 
 ///////////////////////
@@ -752,34 +752,34 @@ function pkcs7strip(data) {
 
 // The block cipher
 var aesjs = {
-    AES: AES,
-    Counter: Counter,
+  AES: AES,
+  Counter: Counter,
 
-    ModeOfOperation: {
-        ecb: ModeOfOperationECB,
-        cbc: ModeOfOperationCBC,
-        cfb: ModeOfOperationCFB,
-        ofb: ModeOfOperationOFB,
-        ctr: ModeOfOperationCTR
-    },
+  ModeOfOperation: {
+    ecb: ModeOfOperationECB,
+    cbc: ModeOfOperationCBC,
+    cfb: ModeOfOperationCFB,
+    ofb: ModeOfOperationOFB,
+    ctr: ModeOfOperationCTR
+  },
 
-    utils: {
-        hex: convertHex,
-        utf8: convertUtf8
-    },
+  utils: {
+    hex: convertHex,
+    utf8: convertUtf8
+  },
 
-    padding: {
-        pkcs7: {
-            pad: pkcs7pad,
-            strip: pkcs7strip
-        }
-    },
-
-    _arrayTest: {
-        coerceArray: coerceArray,
-        createArray: createArray,
-        copyArray: copyArray,
+  padding: {
+    pkcs7: {
+      pad: pkcs7pad,
+      strip: pkcs7strip
     }
+  },
+
+  _arrayTest: {
+    coerceArray: coerceArray,
+    createArray: createArray,
+    copyArray: copyArray,
+  }
 };
 
 window.aesjs = aesjs;
