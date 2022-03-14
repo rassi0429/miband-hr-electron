@@ -1,9 +1,9 @@
-const {app, BrowserWindow,ipcMain,session} = require('electron')
+const {app, BrowserWindow, ipcMain, session} = require('electron')
 const path = require('path')
 
 let mainWindow = null
 
-async function createWindow () {
+async function createWindow() {
   // Create the browser window.
   mainWindow = new BrowserWindow({
     width: 500,
@@ -18,9 +18,9 @@ async function createWindow () {
   // and load the index.html of the app.
   await mainWindow.loadFile('./render/index.html')
   const args = process.argv.slice(process.env.NODE_ENV === 'development' ? 2 : 1)
-  if(args[0]) {
+  if (args[0]) {
     console.log("token")
-    mainWindow.webContents.send("key",[args[0]])
+    mainWindow.webContents.send("key", [args[0]])
   }
 }
 
@@ -30,7 +30,7 @@ app.whenReady().then(() => {
 
   session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
     details.requestHeaders["User-Agent"] = "Chrome";
-    callback({ cancel: false, requestHeaders: details.requestHeaders });
+    callback({cancel: false, requestHeaders: details.requestHeaders});
   });
 
   app.on('activate', function () {
@@ -49,17 +49,17 @@ const exp = express()
 var bodyParser = require('body-parser')
 // exp.use(bodyParser.json())
 //exp.use(express.json())
-exp.use(bodyParser.urlencoded({ extended: true }))
+exp.use(bodyParser.urlencoded({extended: true}))
 exp.use(express.static(__dirname + '/static/'))
 const server = http.createServer(exp)
 const wss = new ws.Server({server: server})
 
-const allowCrossDomain = function(req, res, next) {
+const allowCrossDomain = function (req, res, next) {
   res.header('Access-Control-Allow-Origin', '*')
   res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE')
   res.header(
-      'Access-Control-Allow-Headers',
-      'Content-Type, Authorization, access_token'
+    'Access-Control-Allow-Headers',
+    'Content-Type, Authorization, access_token'
   )
 
   // intercept OPTIONS method
@@ -71,10 +71,10 @@ const allowCrossDomain = function(req, res, next) {
 }
 exp.use(allowCrossDomain)
 // For Galaxy Watch
-exp.post("/",(req,res) => {
+exp.post("/", (req, res) => {
   console.log(req.body.rate)
   res.send("OK")
-  mainWindow.webContents.send("log",req.body.rate)
+  mainWindow.webContents.send("log", req.body.rate)
   wss.clients.forEach(function each(client) {
     client.send(req.body.rate)
   })
@@ -90,16 +90,16 @@ wss.on('connection', function connection(ws) {
 server.listen(8080)
 
 
-
 // Token 周り
-ipcMain.on('open-miband-auth',  (event, arg) => {
+ipcMain.on('open-miband-auth', (event, arg) => {
   const loginWindow = new BrowserWindow({width: 600, height: 1000})
-  session.defaultSession.clearCache(() => {})
+  session.defaultSession.clearCache(() => {
+  })
   loginWindow.loadURL("https://account.xiaomi.com/oauth2/authorize?skip_confirm=false&client_id=2882303761517383915&pt=0&scope=1+6000+16001+20000&redirect_uri=https%3A%2F%2Fhm.xiaomi.com%2Fwatch.do&_locale=en_US&response_type=code")
-  loginWindow.webContents.on("did-fail-load",async (evt,code,desc,url)=> {
-    let w = url.replace("https://hm.xiaomi.com/watch.do?code=","")
+  loginWindow.webContents.on("did-fail-load", async (evt, code, desc, url) => {
+    let w = url.replace("https://hm.xiaomi.com/watch.do?code=", "")
     const t = await getDeviceToken(w)
-    mainWindow.webContents.send("key",t)
+    mainWindow.webContents.send("key", t)
     loginWindow.close()
   })
 })
@@ -137,17 +137,19 @@ async function getDeviceToken(code) {
 
   const devices_uri = `https://api-mifit-us2.huami.com/users/${user_id}/devices`
 
-  const r = await axios.get(devices_uri, { params: { 'enableMultiDevice': 'true' }, headers: { 'apptoken': app_token } })
+  const r = await axios.get(devices_uri, {params: {'enableMultiDevice': 'true'}, headers: {'apptoken': app_token}})
   const result = r.data.items
   let tokens = []
   result.forEach(element => {
     try {
       tokens.push(JSON.parse(element.additionalInfo).auth_key)
-    } catch {}
+    } catch {
+    }
   })
   console.log("Token OK")
   return tokens
 }
+
 function generateRandom() {
   const hex = (Math.random() * 0xFF | 0).toString(16)
   return ("00" + hex).slice(-2)
