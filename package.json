@@ -1,0 +1,54 @@
+{
+  "name": "electron-nuxt-tutorial",
+  "version": "0.0.1",
+  "description": "An electron-nuxt project",
+  "main": "./dist/main/index.js",
+  "scripts": {
+    "dev": "node .electron-nuxt/dev.js",
+    "build": "node .electron-nuxt/build.js",
+    "lint": "node_modules/.bin/eslint --ext .js,.vue,.ts -f ./node_modules/eslint-friendly-formatter ./src",
+    "lint:fix": "yarn lint --fix",
+    "preinstall": "node .electron-nuxt/check-engines.js",
+    "postinstall": "electron-builder install-app-deps & yarn lint:fix"
+  },
+  "keywords": [],
+  "author": "rassi0429 <taitokokoa+rassi@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/michalzaq12/electron-nuxt/blob/master/README.md",
+  "engines": {
+    "node": ">=14.14.9"
+  },
+  "resolutions": {
+    "@types/node": "14.14.9"
+  },
+  "devDependencies": {
+    "@mdi/font": "^6.4.95",
+    "@nuxt/typescript-build": "^2.1.0",
+    "@nuxtjs/eslint-config-typescript": "8.0.0",
+    "@nuxtjs/vuetify": "^1.12.1",
+    "@xpda-dev/core": "^0.1.6",
+    "@xpda-dev/electron-builder": "^0.2.1",
+    "@xpda-dev/electron-launcher": "^0.3.0",
+    "@xpda-dev/webpack-step": "^0.1.6",
+    "cross-env": "^7.0.3",
+    "deepmerge": "^4.2.2",
+    "electron": "^16.0.5",
+    "electron-builder": "^22.14.5",
+    "electron-devtools-installer": "^3.2.0",
+    "eslint": "8.1.0",
+    "eslint-friendly-formatter": "4.0.1",
+    "eslint-loader": "4.0.2",
+    "nuxt": "^2.15.8",
+    "pug": "^3.0.2",
+    "pug-loader": "^2.4.0",
+    "pug-plain-loader": "^1.1.0",
+    "roboto-fontface": "^0.10.0",
+    "vuetify": "^2.5.10",
+    "webpack": "^4.46.0",
+    "webpack-node-externals": "^3.0.0"
+  },
+  "dependencies": {
+    "chart.js": "^2",
+    "vue-chartjs": "^3.5.1"
+  }
+}
