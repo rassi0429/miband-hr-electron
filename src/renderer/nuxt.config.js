@@ -9,13 +9,13 @@ module.exports = {
   ssr: false,
   target: 'static',
   head: {
-    title: 'electron-nuxt-tutorial',
+    title: 'Mi4Neos',
     meta: [{ charset: 'utf-8' }]
   },
   loading: false,
   plugins: [
-    { ssr: true, src: '@/plugins/icons.js' }
-
+    { ssr: true, src: '@/plugins/icons.js' },
+    { src: '~/plugins/persistedState.client.js' }
   ],
   buildModules: [
     '@nuxt/typescript-build'

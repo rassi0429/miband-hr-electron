@@ -4,7 +4,7 @@
       v-app-bar-title Mi4Neos
       v-spacer
       v-btn.mr-2(outlined small) {{serverHost}}
-      v-btn(@click="showSetting = true" small outlined)
+      v-btn(@click="setSettingState(true)" small outlined)
         v-icon mdi-cog
     v-main(app)
       v-container
@@ -35,37 +35,27 @@
                 v-card-text
 
             // bar-chart
-    v-dialog(v-model="showSetting")
-      v-card
-        v-card-title settings
-        v-card-text
-          v-row
-            v-col(cols="4")
-              div.text-body-1.pl-2 port
-            v-col(cols="8")
-              v-row(align="center" )
-                v-checkbox.ma-0.mr-2(hide-details label="自動割り当て" )
-                v-text-field(outlined hide-details dense placeholder="ex. 8888" )
-          v-row
-            v-col(cols="12")
-              p.text-body-1.pl-2 Version 1.2.0 :
-                a(href="https://github.com/rassi0429/miband-hr-electron") GitHub
+      setting-modal
 </template>
 
 <script>
-
+import { mapMutations } from 'vuex'
 import LineChart from '@/components/LineChart'
 import BarChart from '@/components/BarChart'
+import SettingModal from '@/components/SettingModal'
 
 export default {
   name: 'IndexPage',
   components: {
+    SettingModal,
     BarChart,
     LineChart
   },
+  methods: {
+    ...mapMutations('modal', ['setSettingState'])
+  },
   data () {
     return {
-      showSetting: true,
       serverHost: 'wss://localhost:8080',
       testData: {
         labels: [...Array(7)],

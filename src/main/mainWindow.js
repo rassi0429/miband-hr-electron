@@ -1,4 +1,5 @@
 import BrowserWinHandler from './BrowserWinHandler'
+import { WebServer } from './server'
 
 const winHandler = new BrowserWinHandler({
   height: 440,
@@ -6,10 +7,9 @@ const winHandler = new BrowserWinHandler({
   autoHideMenuBar: true
 })
 
-winHandler.onCreated(_browserWindow => {
-  winHandler.loadPage('/')
-  // Or load custom url
-  // _browserWindow.loadURL('https://google.com')
+winHandler.onCreated(async _browserWindow => {
+  await winHandler.loadPage('/')
+  const server = new WebServer(8080)
 })
 
 export default winHandler
