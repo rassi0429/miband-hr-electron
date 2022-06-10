@@ -54,6 +54,6 @@
     "vue-chartjs": "^3.5.1",
     "vuex-electron": "^1.0.3",
     "vuex-persistedstate": "^4.1.0",
-    "ws": "^8.5.0"
+    "ws": "^8.8.0"
   }
 }
