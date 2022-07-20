@@ -22,7 +22,7 @@
     "@types/node": "14.14.9"
   },
   "devDependencies": {
-    "@mdi/font": "^6.4.95",
+    "@mdi/font": "^7.0.96",
     "@nuxt/typescript-build": "^2.1.0",
     "@nuxtjs/eslint-config-typescript": "8.0.0",
     "@nuxtjs/vuetify": "^1.12.1",
