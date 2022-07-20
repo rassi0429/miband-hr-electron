@@ -51,7 +51,7 @@
     "axios": "^0.26.1",
     "chart.js": "^2",
     "express": "^4.17.3",
-    "vue-chartjs": "^3.5.1",
+    "vue-chartjs": "^4.1.1",
     "vuex-electron": "^1.0.3",
     "vuex-persistedstate": "^4.1.0",
     "ws": "^8.5.0"
