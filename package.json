@@ -38,7 +38,7 @@
     "eslint": "8.1.0",
     "eslint-friendly-formatter": "4.0.1",
     "eslint-loader": "4.0.2",
-    "nuxt": "^2.15.8",
+    "nuxt": "^3.1.0",
     "pug": "^3.0.2",
     "pug-loader": "^2.4.0",
     "pug-plain-loader": "^1.1.0",
